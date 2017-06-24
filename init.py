@@ -4,7 +4,10 @@ import glob, sys, os, sched, time, random
 period = 10
 
 # command line to change wallpaper
-command = "gsettings set org.gnome.desktop.background picture-uri '%s'"
+commands = [
+               "gsettings set org.gnome.desktop.background picture-options 'fill'",     # wallpaper mode: fill, centered, ..
+               "gsettings set org.gnome.desktop.background picture-uri '%s'"            # %s will be replaced with image path
+           ]
 
 # needed for gsettings to work
 path_prefix = "file://"
@@ -17,11 +20,11 @@ extensions = [
                 "*.PNG"
              ]
 
-# path to search for
+# path to search for give command line arguments
 if len(sys.argv) >= 2:
     path = sys.argv[1]
 else:
-    path = os.environ['HOME'] + "/Pictures/"
+    path = os.environ['HOME'] + "/Pictures/"    # default path /home/amir/Pictures/
 
 
 # list of files
@@ -36,9 +39,13 @@ results = list(set(results))
 s = sched.scheduler(time.time, time.sleep)
 def change_wallpaper(sc): 
 
+    # random image path
+    rand_image_path = (path_prefix + results[random.randint(0, len(results) - 1)])
+    
     # run wallpaper changing command
-    os.system(command % (path_prefix + results[random.randint(0, len(results) - 1)]))
-
+    map(lambda command: os.system((command % rand_image_path) if "%s" in command else (command)), commands)
+    
+    # reschedule the function to run
     s.enter(period, 1, change_wallpaper, (sc,))
 
 s.enter(period, 1, change_wallpaper, (s,))
